@@ -49,7 +49,7 @@ function get_default_index_settings () {
 }
 
 function create_new_index () {
-    log "Creating index [${1}}]"  
+    log "Creating index [${1}}]"
     curl -ks -X PUT "${ES_HOST}/${1}?pretty" \
         -u "${ES_USER}:${ES_PASSWORD}" \
         | tee /dev/stderr | grep "resource_already_exists_exception" >/dev/null 2>&1 && return 1
@@ -122,13 +122,17 @@ function reindex () {
         }
     }
     ' | tee /dev/stderr | jq -r '.task')
-    
+
+    log "Task ID: ${task}"
+
+    docs_total=$(curl -ks -X GET "${ES_HOST}/_tasks/${task}" -u "${ES_USER}:${ES_PASSWORD}" | jq '.task.status.total')
+
     while true; do
         status=$(curl -ks -X GET "${ES_HOST}/_tasks/${task}" -u "${ES_USER}:${ES_PASSWORD}" | jq '.completed')
         [ "${status}" = "true" ] && break;
         # We could get document count from task instead.
-        docs_done=$(curl -ks -X GET "${ES_HOST}/_tasks/${task}" -u "${ES_USER}:${ES_PASSWORD}" | jq '.task.status.total')
-        log "Waiting for reindexing to complete - ${docs_done} documents done."
+        docs_done=$(curl -ks -X GET "${ES_HOST}/_tasks/${task}" -u "${ES_USER}:${ES_PASSWORD}" | jq '.task.status.created')
+        log "Waiting for reindexing to complete - ${docs_done} / ${docs_total} documents done."
         sleep 10
     done
 
