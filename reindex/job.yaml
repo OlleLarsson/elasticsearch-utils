@@ -1,0 +1,23 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: elasticsearch-reindex
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: reindexer
+        image: mintel/docker-alpine-bash-curl-jq
+        command: ["/bin/bash",  "-c", "/reindex/reindex.sh $(INDEXES)"]
+        envFrom:
+          - secretRef:
+              name: reindexer-env
+        volumeMounts:
+          - name: reindex-script
+            mountPath: /reindex/
+      volumes:
+        - name: reindex-script
+          configMap:
+            name: reindex-script
+            defaultMode: 0777
