@@ -125,12 +125,10 @@ function reindex () {
 
     log "Task ID: ${task}"
 
-    docs_total=$(curl -ks -X GET "${ES_HOST}/_tasks/${task}" -u "${ES_USER}:${ES_PASSWORD}" | jq '.task.status.total')
-
     while true; do
         status=$(curl -ks -X GET "${ES_HOST}/_tasks/${task}" -u "${ES_USER}:${ES_PASSWORD}" | jq '.completed')
         [ "${status}" = "true" ] && break;
-        # We could get document count from task instead.
+        docs_total=$(curl -ks -X GET "${ES_HOST}/_tasks/${task}" -u "${ES_USER}:${ES_PASSWORD}" | jq '.task.status.total')
         docs_done=$(curl -ks -X GET "${ES_HOST}/_tasks/${task}" -u "${ES_USER}:${ES_PASSWORD}" | jq '.task.status.created')
         log "Waiting for reindexing to complete - ${docs_done} / ${docs_total} documents done."
         sleep 10
